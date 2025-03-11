@@ -1,48 +1,107 @@
-Add-Type -AssemblyName Microsoft.VisualBasic
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
 
 # Définition du fichier HTML
-$fichier = "D:\historique_incidents.html"
+$fichierHTML = "D:\historique_incidents.html"
 
-# Vérifier si le fichier existe, sinon le créer avec un squelette HTML
-if (!(Test-Path $fichier)) {
+# Vérifier si le fichier HTML existe, sinon le créer avec un squelette de base
+if (!(Test-Path $fichierHTML)) {
     @"
 <!DOCTYPE html>
 <html lang='fr'>
 <head>
     <meta charset='UTF-8'>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <title>Historique des incidents</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f4; text-align: center; }
+        body { font-family: Arial, sans-serif; background: #f4f4f4; text-align: center; }
         h2 { color: #333; }
-        table { width: 100%; border-collapse: collapse; background: white; margin-top: 10px; }
+        table { width: 90%; border-collapse: collapse; margin: auto; background: white; }
         th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
         th { background: #0078D7; color: white; }
-        input { padding: 5px; margin: 10px; width: 30%; }
+        input, button { padding: 5px; margin: 10px; }
     </style>
     <script>
-        function filterTable() {
-            var inputDate = document.getElementById("filterDate").value;
+        function updateIncidentCount() {
+            var table = document.getElementById("logTable");
+            var tr = table.getElementsByTagName("tr");
+            var count = 0;
+
+            for (var i = 1; i < tr.length; i++) {
+                if (tr[i].style.display !== "none") {
+                    count++;
+                }
+            }
+
+            document.getElementById("incidentCount").textContent = "Nombre d'incidents affichés : " + count;
+        }
+
+        function filterTableByDate(range) {
+            var table = document.getElementById("logTable");
+            var tr = table.getElementsByTagName("tr");
+            var now = new Date();
+
+            for (var i = 1; i < tr.length; i++) {
+                var td = tr[i].getElementsByTagName("td")[0];
+                if (td) {
+                    var incidentDate = new Date(td.textContent);
+                    var display = false;
+
+                    switch (range) {
+                        case 'today':
+                            display = (incidentDate.toDateString() === now.toDateString());
+                            break;
+                        case 'week':
+                            var oneWeekAgo = new Date();
+                            oneWeekAgo.setDate(now.getDate() - 7);
+                            display = (incidentDate >= oneWeekAgo && incidentDate <= now);
+                            break;
+                        case 'month':
+                            var oneMonthAgo = new Date();
+                            oneMonthAgo.setMonth(now.getMonth() - 1);
+                            display = (incidentDate >= oneMonthAgo && incidentDate <= now);
+                            break;
+                        case 'all':
+                            display = true;
+                            break;
+                    }
+
+                    tr[i].style.display = display ? "" : "none";
+                }
+            }
+
+            updateIncidentCount();
+        }
+
+        function filterTableByName() {
             var inputText = document.getElementById("filterText").value.toLowerCase();
             var table = document.getElementById("logTable");
             var tr = table.getElementsByTagName("tr");
 
             for (var i = 1; i < tr.length; i++) {
-                var tdDate = tr[i].getElementsByTagName("td")[0];
-                var tdText = tr[i].getElementsByTagName("td")[1];
-                if (tdDate && tdText) {
-                    var dateMatch = (inputDate === "" || tdDate.textContent.startsWith(inputDate));
-                    var textMatch = (inputText === "" || tdText.textContent.toLowerCase().includes(inputText));
-                    tr[i].style.display = (dateMatch && textMatch) ? "" : "none";
+                var td = tr[i].getElementsByTagName("td")[1];
+                if (td) {
+                    tr[i].style.display = td.textContent.toLowerCase().includes(inputText) ? "" : "none";
                 }
             }
+
+            updateIncidentCount();
+        }
+
+        // Appeler la fonction pour mettre à jour le nombre d'incidents affichés par défaut
+        window.onload = function() {
+            filterTableByDate('all');
         }
     </script>
 </head>
 <body>
     <h2>Historique des incidents</h2>
-    <input type="date" id="filterDate" oninput="filterTable()">
-    <input type="text" id="filterText" placeholder="Rechercher un incident..." oninput="filterTable()">
+    <button onclick="filterTableByDate('today')">Aujourd'hui</button>
+    <button onclick="filterTableByDate('week')">7 Jours</button>
+    <button onclick="filterTableByDate('month')">1 mois</button>
+    <button onclick="filterTableByDate('all')">Tout</button>
+    <br>
+    <input type="text" id="filterText" placeholder="Rechercher un incident..." oninput="filterTableByName()">
+    <p id="incidentCount">Nombre d'incidents affichés : 0</p>
     <table id="logTable">
         <thead>
             <tr><th>Horodatage</th><th>Incident</th></tr>
@@ -52,34 +111,116 @@ if (!(Test-Path $fichier)) {
     </table>
 </body>
 </html>
-"@ | Out-File -Encoding UTF8 -FilePath $fichier
+"@ | Out-File -Encoding UTF8 -FilePath $fichierHTML
 }
 
-# Boucle pour permettre les entrées successives
-while ($true) {
-    # Afficher une InputBox
-    $valeur = [Microsoft.VisualBasic.Interaction]::InputBox("Décrivez l'incident :", "Saisie d'un incident", "")
+# Fonction pour récupérer les incidents déjà présents dans le fichier HTML
+function Get-ExistingIncidents {
+    if (Test-Path $fichierHTML) {
+        $htmlContent = Get-Content -Raw -Path $fichierHTML
+        $matches = [regex]::Matches($htmlContent, "<tr><td>.+?</td><td>(.+?)</td></tr>")
+        return $matches | ForEach-Object { $_.Groups[1].Value }
+    }
+    return @()
+}
 
-    # Vérifier si l'utilisateur ferme la boîte ou clique sur "Annuler"
-    if ($valeur -eq "") {
-        break
+# Fonction pour ajouter un incident unique dans le fichier HTML
+function AjouterIncidentHTML {
+    param ([string]$incident)
+    $incident = $incident.Trim()
+    if ($incident -eq "") { return }
+
+    # Vérifier si l'incident existe déjà dans le fichier HTML
+    $existingIncidents = Get-ExistingIncidents
+    if ($existingIncidents -contains $incident) {
+        [System.Windows.Forms.MessageBox]::Show("Cet incident existe déjà.", "Doublon détecté", "OK", "Warning")
+        return
     }
 
-    # Générer un timestamp
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $incidentLink = "<a href='http://search/$incident/result'>$incident</a>"
 
     # Lire le contenu actuel du fichier HTML
-    $htmlContent = Get-Content -Raw -Path $fichier
-
-    # Insérer la nouvelle ligne en haut du tableau
-    $nouvelleLigne = "<tr><td>$timestamp</td><td>$valeur</td></tr>"
+    $htmlContent = Get-Content -Raw -Path $fichierHTML
+    $nouvelleLigne = "<tr><td>$timestamp</td><td>$incidentLink</td></tr>"
 
     # Injecter la nouvelle ligne en haut du tableau
     $htmlContent = $htmlContent -replace "(<tbody id=`"logEntries`">)", "`$1`n$nouvelleLigne"
-
-    # Écrire dans le fichier
-    $htmlContent | Out-File -Encoding UTF8 -FilePath $fichier
-
-    # Ouvrir automatiquement le fichier HTML dans le navigateur
-    Start-Process $fichier
+    $htmlContent | Out-File -Encoding UTF8 -FilePath $fichierHTML
 }
+
+# Fonction pour importer un fichier d'incidents
+function ImporterFichierIncidents {
+    $openFileDialog = New-Object System.Windows.Forms.OpenFileDialog
+    $openFileDialog.InitialDirectory = "D:\"
+    $openFileDialog.Filter = "Fichiers texte (*.txt)|*.txt|Tous les fichiers (*.*)|*.*"
+    $openFileDialog.Title = "Sélectionner un fichier d'incidents"
+
+    if ($openFileDialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+        $fichierImport = $openFileDialog.FileName
+        if (Test-Path $fichierImport) {
+            $existingIncidents = Get-ExistingIncidents
+            $incidents = Get-Content -Path $fichierImport | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" }
+
+            $incidentsAjoutes = 0
+            foreach ($incident in $incidents) {
+                # Vérification des doublons avant l'ajout
+                if ($existingIncidents -notcontains $incident) {
+                    AjouterIncidentHTML -incident $incident
+                    $incidentsAjoutes++
+                }
+            }
+            
+            if ($incidentsAjoutes -eq 0) {
+                [System.Windows.Forms.MessageBox]::Show("Aucun nouvel incident ajouté.", "Aucune nouveauté", "OK", "Information")
+            } else {
+                Start-Process $fichierHTML
+            }
+        }
+    }
+}
+
+# Interface Graphique avec 3 boutons
+$form = New-Object System.Windows.Forms.Form
+$form.Text = "Ajout d'un incident"
+$form.Size = New-Object System.Drawing.Size(420, 200)
+$form.StartPosition = "CenterScreen"
+
+$label = New-Object System.Windows.Forms.Label
+$label.Text = "Décrivez l'incident :"
+$label.Location = New-Object System.Drawing.Point(20, 20)
+$label.Size = New-Object System.Drawing.Size(200, 20)
+$form.Controls.Add($label)
+
+$textbox = New-Object System.Windows.Forms.TextBox
+$textbox.Location = New-Object System.Drawing.Point(20, 50)
+$textbox.Size = New-Object System.Drawing.Size(350, 20)
+$form.Controls.Add($textbox)
+
+# Bouton "OK"
+$btnOK = New-Object System.Windows.Forms.Button
+$btnOK.Text = "OK"
+$btnOK.Location = New-Object System.Drawing.Point(50, 100)
+$btnOK.Add_Click({
+    AjouterIncidentHTML -incident $textbox.Text
+    $textbox.Text = ""  # Vider la boîte après ajout
+    Start-Process $fichierHTML
+})
+$form.Controls.Add($btnOK)
+
+# Bouton "Importer un fichier"
+$btnImport = New-Object System.Windows.Forms.Button
+$btnImport.Text = "Importer un fichier"
+$btnImport.Location = New-Object System.Drawing.Point(160, 100)
+$btnImport.Add_Click({ ImporterFichierIncidents })
+$form.Controls.Add($btnImport)
+
+# Bouton "Annuler"
+$btnAnnuler = New-Object System.Windows.Forms.Button
+$btnAnnuler.Text = "Annuler"
+$btnAnnuler.Location = New-Object System.Drawing.Point(280, 100)
+$btnAnnuler.Add_Click({ $form.Close() })
+$form.Controls.Add($btnAnnuler)
+
+# Lancer la fenêtre
+$form.ShowDialog()
