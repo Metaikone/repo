@@ -118,7 +118,7 @@ if (!(Test-Path $fichierHTML)) {
 function Get-ExistingIncidents {
     if (Test-Path $fichierHTML) {
         $htmlContent = Get-Content -Raw -Path $fichierHTML
-        $matches = [regex]::Matches($htmlContent, "<tr><td>.+?</td><td>(.+?)</td></tr>")
+        $matches = [regex]::Matches($htmlContent, "<tr><td>.+?</td><td><a href='http://search/.+?/result' target='_blank'>(.+?)</a></td></tr>")
         return $matches | ForEach-Object { $_.Groups[1].Value }
     }
     return @()
@@ -138,7 +138,7 @@ function AjouterIncidentHTML {
     }
 
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $incidentLink = "<a href='http://search/$incident/result'>$incident</a>"
+    $incidentLink = "<a href='http://search/$incident/result' target='_blank'>$incident</a>"
 
     # Lire le contenu actuel du fichier HTML
     $htmlContent = Get-Content -Raw -Path $fichierHTML
