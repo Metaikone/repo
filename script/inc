@@ -1,0 +1,13 @@
+# Fonction pour récupérer les incidents déjà présents dans le fichier HTML
+function Get-ExistingIncidents {
+    if (Test-Path $fichierHTML) {
+        $htmlContent = Get-Content -Raw -Path $fichierHTML
+        $matches = [regex]::Matches($htmlContent, "<tr><td>.+?</td><td><a href='http://search/.+?/result' target='_blank'>(.+?)</a></td></tr>")
+        $existingIncidents = @()
+        foreach ($match in $matches) {
+            $existingIncidents += $match.Groups[1].Value
+        }
+        return $existingIncidents
+    }
+    return @()
+}
