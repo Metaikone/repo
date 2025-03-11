@@ -87,9 +87,39 @@ if (!(Test-Path $fichierHTML)) {
             updateIncidentCount();
         }
 
+        function filterTableByType(type) {
+            var table = document.getElementById("logTable");
+            var tr = table.getElementsByTagName("tr");
+
+            for (var i = 1; i < tr.length; i++) {
+                var td = tr[i].getElementsByTagName("td")[1];
+                if (td) {
+                    var isIncident = td.textContent.includes("INC");
+                    var display = false;
+
+                    switch (type) {
+                        case 'incident':
+                            display = isIncident;
+                            break;
+                        case 'ritm':
+                            display = !isIncident;
+                            break;
+                        case 'all':
+                            display = true;
+                            break;
+                    }
+
+                    tr[i].style.display = display ? "" : "none";
+                }
+            }
+
+            updateIncidentCount();
+        }
+
         // Appeler la fonction pour mettre à jour le nombre d'incidents affichés par défaut
         window.onload = function() {
             filterTableByDate('all');
+            filterTableByType('all');
         }
     </script>
 </head>
@@ -99,6 +129,10 @@ if (!(Test-Path $fichierHTML)) {
     <button onclick="filterTableByDate('week')">7 Jours</button>
     <button onclick="filterTableByDate('month')">1 mois</button>
     <button onclick="filterTableByDate('all')">Tout</button>
+    <br>
+    <button onclick="filterTableByType('incident')">Incidents</button>
+    <button onclick="filterTableByType('ritm')">RITMs</button>
+    <button onclick="filterTableByType('all')">Tous</button>
     <br>
     <input type="text" id="filterText" placeholder="Rechercher un incident..." oninput="filterTableByName()">
     <p id="incidentCount">Nombre d'incidents affichés : 0</p>
