@@ -17,6 +17,7 @@ if (!(Test-Path $fichierHTML)) {
     <meta charset='UTF-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <title>Historique des incidents</title>
+    <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css'>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -109,7 +110,11 @@ if (!(Test-Path $fichierHTML)) {
         a:hover {
             text-decoration: underline;
         }
+        .calendar {
+            margin-bottom: 20px;
+        }
     </style>
+    <script src='https://cdn.jsdelivr.net/npm/flatpickr'></script>
     <script>
         function updateIncidentCount() {
             var table = document.getElementById('logTable');
@@ -151,6 +156,22 @@ if (!(Test-Path $fichierHTML)) {
             }
             updateIncidentCount();
             setActiveButton('date', range);
+        }
+
+        function filterTableByExactDateRange(startDate, endDate) {
+            var table = document.getElementById('logTable');
+            var tr = table.getElementsByTagName('tr');
+            var start = new Date(startDate);
+            var end = new Date(endDate);
+            for (var i = 1; i < tr.length; i++) {
+                var td = tr[i].getElementsByTagName('td')[0];
+                if (td) {
+                    var incidentDate = new Date(td.textContent);
+                    var display = (incidentDate >= start && incidentDate <= end);
+                    tr[i].style.display = display ? '' : 'none';
+                }
+            }
+            updateIncidentCount();
         }
 
         function filterTableByName() {
@@ -205,6 +226,14 @@ if (!(Test-Path $fichierHTML)) {
             filterTableByDate('all');
             filterTableByType('all');
             setInterval(refreshPage, 30000);
+            flatpickr('#calendar', {
+                mode: 'range',
+                onChange: function(selectedDates, dateStr, instance) {
+                    if (selectedDates.length === 2) {
+                        filterTableByExactDateRange(selectedDates[0], selectedDates[1]);
+                    }
+                }
+            });
         }
     </script>
 </head>
@@ -223,8 +252,11 @@ if (!(Test-Path $fichierHTML)) {
             <button data-type="all" class="active" onclick="filterTableByType('all')">Tous</button>
         </div>
     </div>
+    <div class="calendar">
+        <input type="text" id="calendar" placeholder="Sélectionner une période">
+    </div>
     <input type="text" id="filterText" placeholder="Rechercher un incident..." oninput="filterTableByName()">
-    <button class="refresh-button" onclick="refreshPage()">Refresh (auto 30 sec)</button>
+    <button class="refresh-button" onclick="refreshPage()">Rafraîchir</button>
     <p id="incidentCount">Nombre d'incidents affichés : 0</p>
     <table id="logTable">
         <thead>
