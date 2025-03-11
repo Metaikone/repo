@@ -4,6 +4,10 @@ Add-Type -AssemblyName System.Drawing
 # Définition du fichier HTML
 $fichierHTML = "D:\historique_incidents.html"
 
+# Définition de l'URL et de la position de $incident
+$urlTemplate = "http://search/{incident}/result"
+$linkTemplate = "<a href='{url}' target='_blank'>{incident}</a>"
+
 # Vérifier si le fichier HTML existe, sinon le créer avec un squelette de base
 if (!(Test-Path $fichierHTML)) {
     @"
@@ -11,137 +15,209 @@ if (!(Test-Path $fichierHTML)) {
 <html lang='fr'>
 <head>
     <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <title>Historique des incidents</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; text-align: center; }
-        h2 { color: #333; }
-        table { width: 90%; border-collapse: collapse; margin: auto; background: white; }
-        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
-        th { background: #0078D7; color: white; }
-        input, button { padding: 5px; margin: 10px; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #121212;
+            color: #E0E0E0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h2 {
+            color: #0078D7;
+            margin-bottom: 20px;
+        }
+        .filter-section {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .filter-buttons button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #333;
+            color: white;
+            transition: 0.3s;
+        }
+        .filter-buttons button:hover {
+            background: #0078D7;
+        }
+        input {
+            padding: 10px;
+            width: 250px;
+            border-radius: 5px;
+            border: 1px solid #444;
+            background: #1E1E1E;
+            color: white;
+            text-align: center;
+        }
+        table {
+            width: 90%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: #1E1E1E;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #444;
+            text-align: left;
+        }
+        th {
+            background: #0078D7;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background: #2C2C2C;
+        }
+        tr:hover {
+            background: #3C3C3C;
+        }
+        .refresh-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #0078D7;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        p {
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        a {
+            color: #00BFFF; /* Light Blue */
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
     </style>
     <script>
         function updateIncidentCount() {
-            var table = document.getElementById("logTable");
-            var tr = table.getElementsByTagName("tr");
+            var table = document.getElementById('logTable');
+            var tr = table.getElementsByTagName('tr');
             var count = 0;
-
             for (var i = 1; i < tr.length; i++) {
-                if (tr[i].style.display !== "none") {
+                if (tr[i].style.display !== 'none') {
                     count++;
                 }
             }
-
-            document.getElementById("incidentCount").textContent = "Nombre d'incidents affichés : " + count;
+            document.getElementById('incidentCount').textContent = 'Nombre d\'incidents affichés : ' + count;
         }
 
         function filterTableByDate(range) {
-            var table = document.getElementById("logTable");
-            var tr = table.getElementsByTagName("tr");
+            var table = document.getElementById('logTable');
+            var tr = table.getElementsByTagName('tr');
             var now = new Date();
-
             for (var i = 1; i < tr.length; i++) {
-                var td = tr[i].getElementsByTagName("td")[0];
+                var td = tr[i].getElementsByTagName('td')[0];
                 if (td) {
                     var incidentDate = new Date(td.textContent);
                     var display = false;
-
                     switch (range) {
-                        case 'today':
-                            display = (incidentDate.toDateString() === now.toDateString());
-                            break;
-                        case 'week':
-                            var oneWeekAgo = new Date();
+                        case 'today': display = (incidentDate.toDateString() === now.toDateString()); break;
+                        case 'week': 
+                            var oneWeekAgo = new Date(); 
                             oneWeekAgo.setDate(now.getDate() - 7);
-                            display = (incidentDate >= oneWeekAgo && incidentDate <= now);
+                            display = (incidentDate >= oneWeekAgo && incidentDate <= now); 
                             break;
-                        case 'month':
-                            var oneMonthAgo = new Date();
+                        case 'month': 
+                            var oneMonthAgo = new Date(); 
                             oneMonthAgo.setMonth(now.getMonth() - 1);
-                            display = (incidentDate >= oneMonthAgo && incidentDate <= now);
+                            display = (incidentDate >= oneMonthAgo && incidentDate <= now); 
                             break;
-                        case 'all':
-                            display = true;
-                            break;
+                        case 'all': display = true; break;
                     }
-
-                    tr[i].style.display = display ? "" : "none";
+                    tr[i].style.display = display ? '' : 'none';
                 }
             }
-
             updateIncidentCount();
         }
 
         function filterTableByName() {
-            var inputText = document.getElementById("filterText").value.toLowerCase();
-            var table = document.getElementById("logTable");
-            var tr = table.getElementsByTagName("tr");
-
+            var inputText = document.getElementById('filterText').value.toLowerCase();
+            var table = document.getElementById('logTable');
+            var tr = table.getElementsByTagName('tr');
             for (var i = 1; i < tr.length; i++) {
-                var td = tr[i].getElementsByTagName("td")[1];
+                var td = tr[i].getElementsByTagName('td')[1];
                 if (td) {
-                    tr[i].style.display = td.textContent.toLowerCase().includes(inputText) ? "" : "none";
+                    tr[i].style.display = td.textContent.toLowerCase().includes(inputText) ? '' : 'none';
                 }
             }
-
             updateIncidentCount();
         }
 
         function filterTableByType(type) {
-            var table = document.getElementById("logTable");
-            var tr = table.getElementsByTagName("tr");
-
+            var table = document.getElementById('logTable');
+            var tr = table.getElementsByTagName('tr');
             for (var i = 1; i < tr.length; i++) {
-                var td = tr[i].getElementsByTagName("td")[1];
+                var td = tr[i].getElementsByTagName('td')[1];
                 if (td) {
-                    var isIncident = td.textContent.includes("INC");
+                    var isIncident = td.textContent.includes('INC');
                     var display = false;
-
                     switch (type) {
-                        case 'incident':
-                            display = isIncident;
-                            break;
-                        case 'ritm':
-                            display = !isIncident;
-                            break;
-                        case 'all':
-                            display = true;
-                            break;
+                        case 'incident': display = isIncident; break;
+                        case 'ritm': display = !isIncident; break;
+                        case 'all': display = true; break;
                     }
-
-                    tr[i].style.display = display ? "" : "none";
+                    tr[i].style.display = display ? '' : 'none';
                 }
             }
-
             updateIncidentCount();
         }
 
-        // Appeler la fonction pour mettre à jour le nombre d'incidents affichés par défaut
+        function refreshPage() {
+            location.reload();
+        }
+
         window.onload = function() {
             filterTableByDate('all');
             filterTableByType('all');
+            setInterval(refreshPage, 30000);
         }
     </script>
 </head>
 <body>
     <h2>Historique des incidents</h2>
-    <button onclick="filterTableByDate('today')">Aujourd'hui</button>
-    <button onclick="filterTableByDate('week')">7 Jours</button>
-    <button onclick="filterTableByDate('month')">1 mois</button>
-    <button onclick="filterTableByDate('all')">Tout</button>
-    <br>
-    <button onclick="filterTableByType('incident')">Incidents</button>
-    <button onclick="filterTableByType('ritm')">RITMs</button>
-    <button onclick="filterTableByType('all')">Tous</button>
-    <br>
+    <div class="filter-section">
+        <div class="filter-buttons">
+            <button onclick="filterTableByDate('today')">Aujourd'hui</button>
+            <button onclick="filterTableByDate('week')">7 Jours</button>
+            <button onclick="filterTableByDate('month')">1 Mois</button>
+            <button onclick="filterTableByDate('all')">Tout</button>
+        </div>
+        <div class="filter-buttons">
+            <button onclick="filterTableByType('incident')">Incidents</button>
+            <button onclick="filterTableByType('ritm')">RITMs</button>
+            <button onclick="filterTableByType('all')">Tous</button>
+        </div>
+    </div>
     <input type="text" id="filterText" placeholder="Rechercher un incident..." oninput="filterTableByName()">
+    <button class="refresh-button" onclick="refreshPage()">Rafraîchir</button>
     <p id="incidentCount">Nombre d'incidents affichés : 0</p>
     <table id="logTable">
         <thead>
             <tr><th>Horodatage</th><th>Incident</th></tr>
         </thead>
-        <tbody id="logEntries">
-        </tbody>
+        <tbody id="logEntries"></tbody>
     </table>
 </body>
 </html>
@@ -166,22 +242,24 @@ function Get-ExistingIncidents {
     return @()
 }
 
-
 # Fonction pour ajouter un incident unique dans le fichier HTML
 function AjouterIncidentHTML {
     param ([string]$incident)
     $incident = $incident.Trim()
     if ($incident -eq "") { return }
 
+    # Générer l'URL et le lien hypertexte pour l'incident
+    $url = $urlTemplate -replace "{incident}", $incident
+    $incidentLink = $linkTemplate -replace "{url}", $url -replace "{incident}", $incident
+
     # Vérifier si l'incident existe déjà dans le fichier HTML
     $existingIncidents = Get-ExistingIncidents
     if ($existingIncidents -contains $incident) {
-        [System.Windows.Forms.MessageBox]::Show("Cet incident existe déjà.", "Doublon détecté", "OK", "Warning")
+        [System.Windows.Forms.MessageBox]::Show("Cet incident existe déjà.", "Doublon détecté", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning)
         return
     }
 
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $incidentLink = "<a href='http://search/$incident/result' target='_blank'>$incident</a>"
 
     # Lire le contenu actuel du fichier HTML
     $htmlContent = Get-Content -Raw -Path $fichierHTML
@@ -215,9 +293,7 @@ function ImporterFichierIncidents {
             }
             
             if ($incidentsAjoutes -eq 0) {
-                [System.Windows.Forms.MessageBox]::Show("Aucun nouvel incident ajouté.", "Aucune nouveauté", "OK", "Information")
-            } else {
-                Start-Process $fichierHTML
+                [System.Windows.Forms.MessageBox]::Show("Aucun nouvel incident ajouté.", "Aucune nouveauté", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
             }
         }
     }
@@ -247,7 +323,6 @@ $btnOK.Location = New-Object System.Drawing.Point(50, 100)
 $btnOK.Add_Click({
     AjouterIncidentHTML -incident $textbox.Text
     $textbox.Text = ""  # Vider la boîte après ajout
-    Start-Process $fichierHTML
 })
 $form.Controls.Add($btnOK)
 
