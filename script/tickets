@@ -1,0 +1,85 @@
+Add-Type -AssemblyName Microsoft.VisualBasic
+
+# Définition du fichier HTML
+$fichier = "D:\historique_incidents.html"
+
+# Vérifier si le fichier existe, sinon le créer avec un squelette HTML
+if (!(Test-Path $fichier)) {
+    @"
+<!DOCTYPE html>
+<html lang='fr'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Historique des incidents</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f4; text-align: center; }
+        h2 { color: #333; }
+        table { width: 100%; border-collapse: collapse; background: white; margin-top: 10px; }
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+        th { background: #0078D7; color: white; }
+        input { padding: 5px; margin: 10px; width: 30%; }
+    </style>
+    <script>
+        function filterTable() {
+            var inputDate = document.getElementById("filterDate").value;
+            var inputText = document.getElementById("filterText").value.toLowerCase();
+            var table = document.getElementById("logTable");
+            var tr = table.getElementsByTagName("tr");
+
+            for (var i = 1; i < tr.length; i++) {
+                var tdDate = tr[i].getElementsByTagName("td")[0];
+                var tdText = tr[i].getElementsByTagName("td")[1];
+                if (tdDate && tdText) {
+                    var dateMatch = (inputDate === "" || tdDate.textContent.startsWith(inputDate));
+                    var textMatch = (inputText === "" || tdText.textContent.toLowerCase().includes(inputText));
+                    tr[i].style.display = (dateMatch && textMatch) ? "" : "none";
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+    <h2>Historique des incidents</h2>
+    <input type="date" id="filterDate" oninput="filterTable()">
+    <input type="text" id="filterText" placeholder="Rechercher un incident..." oninput="filterTable()">
+    <table id="logTable">
+        <thead>
+            <tr><th>Horodatage</th><th>Incident</th></tr>
+        </thead>
+        <tbody id="logEntries">
+        </tbody>
+    </table>
+</body>
+</html>
+"@ | Out-File -Encoding UTF8 -FilePath $fichier
+}
+
+# Boucle pour permettre les entrées successives
+while ($true) {
+    # Afficher une InputBox
+    $valeur = [Microsoft.VisualBasic.Interaction]::InputBox("Décrivez l'incident :", "Saisie d'un incident", "")
+
+    # Vérifier si l'utilisateur ferme la boîte ou clique sur "Annuler"
+    if ($valeur -eq "") {
+        break
+    }
+
+    # Générer un timestamp
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+
+    # Lire le contenu actuel du fichier HTML
+    $htmlContent = Get-Content -Raw -Path $fichier
+
+    # Insérer la nouvelle ligne en haut du tableau
+    $nouvelleLigne = "<tr><td>$timestamp</td><td>$valeur</td></tr>"
+
+    # Injecter la nouvelle ligne en haut du tableau
+    $htmlContent = $htmlContent -replace "(<tbody id=`"logEntries`">)", "`$1`n$nouvelleLigne"
+
+    # Écrire dans le fichier
+    $htmlContent | Out-File -Encoding UTF8 -FilePath $fichier
+
+    # Ouvrir automatiquement le fichier HTML dans le navigateur
+    Start-Process $fichier
+}
