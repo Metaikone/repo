@@ -51,7 +51,7 @@ if (!(Test-Path $fichierHTML)) {
             color: white;
             transition: 0.3s;
         }
-        .filter-buttons button:hover {
+        .filter-buttons button.active {
             background: #0078D7;
         }
         input {
@@ -150,6 +150,7 @@ if (!(Test-Path $fichierHTML)) {
                 }
             }
             updateIncidentCount();
+            setActiveButton('date', range);
         }
 
         function filterTableByName() {
@@ -182,6 +183,18 @@ if (!(Test-Path $fichierHTML)) {
                 }
             }
             updateIncidentCount();
+            setActiveButton('type', type);
+        }
+
+        function setActiveButton(category, value) {
+            var buttons = document.querySelectorAll('.filter-buttons button[data-' + category + ']');
+            buttons.forEach(function(button) {
+                if (button.getAttribute('data-' + category) === value) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
         }
 
         function refreshPage() {
@@ -199,19 +212,19 @@ if (!(Test-Path $fichierHTML)) {
     <h2>Historique des incidents</h2>
     <div class="filter-section">
         <div class="filter-buttons">
-            <button onclick="filterTableByDate('today')">Aujourd'hui</button>
-            <button onclick="filterTableByDate('week')">7 Jours</button>
-            <button onclick="filterTableByDate('month')">1 Mois</button>
-            <button onclick="filterTableByDate('all')">Tout</button>
+            <button data-date="today" onclick="filterTableByDate('today')">Aujourd'hui</button>
+            <button data-date="week" onclick="filterTableByDate('week')">7 Jours</button>
+            <button data-date="month" onclick="filterTableByDate('month')">1 Mois</button>
+            <button data-date="all" class="active" onclick="filterTableByDate('all')">Tout</button>
         </div>
         <div class="filter-buttons">
-            <button onclick="filterTableByType('incident')">Incidents</button>
-            <button onclick="filterTableByType('ritm')">RITMs</button>
-            <button onclick="filterTableByType('all')">Tous</button>
+            <button data-type="incident" onclick="filterTableByType('incident')">Incidents</button>
+            <button data-type="ritm" onclick="filterTableByType('ritm')">RITMs</button>
+            <button data-type="all" class="active" onclick="filterTableByType('all')">Tous</button>
         </div>
     </div>
     <input type="text" id="filterText" placeholder="Rechercher un incident..." oninput="filterTableByName()">
-    <button class="refresh-button" onclick="refreshPage()">Rafraîchir</button>
+    <button class="refresh-button" onclick="refreshPage()">Refresh (auto 30 sec)</button>
     <p id="incidentCount">Nombre d'incidents affichés : 0</p>
     <table id="logTable">
         <thead>
@@ -226,17 +239,20 @@ if (!(Test-Path $fichierHTML)) {
 
 # Fonction pour récupérer les incidents déjà présents dans le fichier HTML
 function Get-ExistingIncidents {
+    param (
+        [string]$fichierHTML
+    )
+
     if (Test-Path $fichierHTML) {
         $htmlContent = Get-Content -Raw -Path $fichierHTML -Encoding UTF8
         $existingIncidents = @()
 
-        # Vérification si le fichier contient bien des incidents
-        if ($htmlContent -match "<a href=. +?>(INC\d+)</a>") {
-            $matches = [regex]::Matches($htmlContent, "<a href=. +?>(INC\d+)</a>")
-            foreach ($match in $matches) {
-                $existingIncidents += $match.Groups[1].Value
-            }
+        # Vérification pour récupérer tous les incidents
+        $matches = [regex]::Matches($htmlContent, "<a href=.+?>(.+?)</a>")
+        foreach ($match in $matches) {
+            $existingIncidents += $match.Groups[1].Value
         }
+
         return $existingIncidents
     }
     return @()
@@ -244,7 +260,13 @@ function Get-ExistingIncidents {
 
 # Fonction pour ajouter un incident unique dans le fichier HTML
 function AjouterIncidentHTML {
-    param ([string]$incident)
+    param (
+        [string]$incident,
+        [string]$fichierHTML,
+        [string]$urlTemplate,
+        [string]$linkTemplate
+    )
+
     $incident = $incident.Trim()
     if ($incident -eq "") { return }
 
@@ -253,7 +275,7 @@ function AjouterIncidentHTML {
     $incidentLink = $linkTemplate -replace "{url}", $url -replace "{incident}", $incident
 
     # Vérifier si l'incident existe déjà dans le fichier HTML
-    $existingIncidents = Get-ExistingIncidents
+    $existingIncidents = Get-ExistingIncidents -fichierHTML $fichierHTML
     if ($existingIncidents -contains $incident) {
         [System.Windows.Forms.MessageBox]::Show("Cet incident existe déjà.", "Doublon détecté", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning)
         return
@@ -272,6 +294,12 @@ function AjouterIncidentHTML {
 
 # Fonction pour importer un fichier d'incidents
 function ImporterFichierIncidents {
+    param (
+        [string]$fichierHTML,
+        [string]$urlTemplate,
+        [string]$linkTemplate
+    )
+
     $openFileDialog = New-Object System.Windows.Forms.OpenFileDialog
     $openFileDialog.InitialDirectory = "D:\"
     $openFileDialog.Filter = "Fichiers texte (*.txt)|*.txt|Tous les fichiers (*.*)|*.*"
@@ -280,14 +308,14 @@ function ImporterFichierIncidents {
     if ($openFileDialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
         $fichierImport = $openFileDialog.FileName
         if (Test-Path $fichierImport) {
-            $existingIncidents = Get-ExistingIncidents
+            $existingIncidents = Get-ExistingIncidents -fichierHTML $fichierHTML
             $incidents = Get-Content -Path $fichierImport | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" }
 
             $incidentsAjoutes = 0
             foreach ($incident in $incidents) {
                 # Vérification des doublons avant l'ajout
                 if ($existingIncidents -notcontains $incident) {
-                    AjouterIncidentHTML -incident $incident
+                    AjouterIncidentHTML -incident $incident -fichierHTML $fichierHTML -urlTemplate $urlTemplate -linkTemplate $linkTemplate
                     $incidentsAjoutes++
                 }
             }
@@ -321,7 +349,7 @@ $btnOK = New-Object System.Windows.Forms.Button
 $btnOK.Text = "OK"
 $btnOK.Location = New-Object System.Drawing.Point(50, 100)
 $btnOK.Add_Click({
-    AjouterIncidentHTML -incident $textbox.Text
+    AjouterIncidentHTML -incident $textbox.Text -fichierHTML $fichierHTML -urlTemplate $urlTemplate -linkTemplate $linkTemplate
     $textbox.Text = ""  # Vider la boîte après ajout
 })
 $form.Controls.Add($btnOK)
@@ -330,7 +358,9 @@ $form.Controls.Add($btnOK)
 $btnImport = New-Object System.Windows.Forms.Button
 $btnImport.Text = "Importer un fichier"
 $btnImport.Location = New-Object System.Drawing.Point(160, 100)
-$btnImport.Add_Click({ ImporterFichierIncidents })
+$btnImport.Add_Click({
+    ImporterFichierIncidents -fichierHTML $fichierHTML -urlTemplate $urlTemplate -linkTemplate $linkTemplate
+})
 $form.Controls.Add($btnImport)
 
 # Bouton "Annuler"
