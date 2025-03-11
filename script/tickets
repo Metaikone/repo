@@ -151,12 +151,21 @@ if (!(Test-Path $fichierHTML)) {
 # Fonction pour récupérer les incidents déjà présents dans le fichier HTML
 function Get-ExistingIncidents {
     if (Test-Path $fichierHTML) {
-        $htmlContent = Get-Content -Raw -Path $fichierHTML
-        $matches = [regex]::Matches($htmlContent, "<tr><td>.+?</td><td><a href='http://search/.+?/result' target='_blank'>(.+?)</a></td></tr>")
-        return $matches | ForEach-Object { $_.Groups[1].Value }
+        $htmlContent = Get-Content -Raw -Path $fichierHTML -Encoding UTF8
+        $existingIncidents = @()
+
+        # Vérification si le fichier contient bien des incidents
+        if ($htmlContent -match "<a href=. +?>(INC\d+)</a>") {
+            $matches = [regex]::Matches($htmlContent, "<a href=. +?>(INC\d+)</a>")
+            foreach ($match in $matches) {
+                $existingIncidents += $match.Groups[1].Value
+            }
+        }
+        return $existingIncidents
     }
     return @()
 }
+
 
 # Fonction pour ajouter un incident unique dans le fichier HTML
 function AjouterIncidentHTML {
