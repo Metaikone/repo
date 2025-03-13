@@ -1,0 +1,753 @@
+peut on potimiser ce code pour eviter les repétitions? type: vertical-stack
+cards:
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-template-card
+        primary: Moyenne extérieure
+        secondary: >
+          🌡️{{ states('sensor.temperature_moyenne_exterieure') | float(0) |
+          round(1) | int if states('sensor.temperature_moyenne_exterieure') |
+          float(0) % 1 == 0 else states('sensor.temperature_moyenne_exterieure')
+          | float(0) | round(1)}}°  
+
+          💧{{states('sensor.humidite_moyenne_exterieure') | float(0) | round(0)
+          }}%
+        icon: mdi:tree
+        fill_container: true
+        multiline_secondary: false
+        layout: horizontal
+        tap_action:
+          action: more-info
+        hold_action:
+          action: more-info
+          entity: sensor.humidite_moyenne_exterieure
+        entity: sensor.temperature_moyenne_exterieure
+        icon_color: >
+          {% set temp = states('sensor.temperature_moyenne_exterieure') |
+          float(0) %} {% if temp < 10 %}
+            blue
+          {% elif temp < 20 %}
+            cyan
+          {% elif temp < 30 %}
+            orange
+          {% else %}
+            red
+          {% endif %}
+      - type: custom:mushroom-template-card
+        primary: Moyenne intérieure
+        secondary: >
+          🌡️{{ states('sensor.temperature_moyenne_interieure') | float(0) |
+          round(1) | int if states('sensor.temperature_moyenne_interieure') |
+          float(0) % 1 == 0 else states('sensor.temperature_moyenne_interieure')
+          | float(0) | round(1) }}°
+
+          💧{{ states('sensor.humidite_moyenne_interieure') | float(0) |
+          round(0) }}%
+        icon: mdi:home
+        fill_container: true
+        multiline_secondary: false
+        layout: horizontal
+        tap_action:
+          action: more-info
+        hold_action:
+          action: more-info
+          entity: sensor.humidite_moyenne_interieure
+        entity: sensor.temperature_moyenne_interieure
+        icon_color: >
+          {% set temp = states('sensor.temperature_moyenne_interieure') |
+          float(0) %} {% if temp <= 16 %}
+            #0019FF
+          {% elif temp <= 17 %}
+            #2D7DD2
+          {% elif temp <= 18 %}
+            #89CFF0
+          {% elif temp <= 19 %}
+            #90EE90
+          {% elif temp <= 20 %}
+            #97CC04
+          {% elif temp <= 21 %}
+            #4CAF50
+          {% elif temp <= 22 %}
+            #FFD700
+          {% elif temp <= 23 %}
+            #FFA500
+          {% elif temp <= 24 %}
+            #F45D01
+          {% elif temp <= 25 %}
+            #FF4500
+          {% elif temp <= 26 %}
+            #FF0000
+          {% else %}
+            #8B0000
+          {% endif %}
+  - type: grid
+    columns: 3
+    square: false
+    cards:
+      - type: custom:mushroom-template-card
+        primary: Salon
+        secondary: >+
+          🌡️{{ states('sensor.t_salon_temperature') | float(0) | round(1) | int
+          if states('sensor.t_salon_temperature') | float(0) % 1 == 0 else
+          states('sensor.t_salon_temperature') | float(0) | round(1) }}°
+
+          {% if states('sensor.air_quality_salon_humidity') | string not in ['',
+          'unknown', 'unavailable', 'None'] %}
+
+          💧{{ states('sensor.air_quality_salon_humidity') | float(0) | round(0)
+          }}%
+
+          {% endif %}
+
+        icon: mdi:sofa
+        fill_container: true
+        multiline_secondary: false
+        tap_action:
+          action: more-info
+        hold_action:
+          action: more-info
+          entity: sensor.air_quality_salon_humidity
+        entity: sensor.t_salon_temperature
+        icon_color: >-
+          {% set temp = states('sensor.t_salon_temperature')|float %} {% if temp
+          <= 16 %}#0019FF {% elif temp <= 17 %}#2D7DD2 {% elif temp <= 18
+          %}#89CFF0 {% elif temp <= 19 %}#90EE90 {% elif temp <= 20 %}#97CC04 {%
+          elif temp <= 21 %}#4CAF50 {% elif temp <= 22 %}#FFD700 {% elif temp <=
+          23 %}#FFA500 {% elif temp <= 24 %}#F45D01 {% elif temp <= 25 %}#FF4500
+          {% elif temp <= 26 %}#FF0000 {% else %}#8B0000{% endif %}
+        layout: vertical
+      - type: custom:mushroom-template-card
+        primary: Chambre
+        secondary: >
+          🌡️{{ states('sensor.t_chambre_temperature')|float(0)|round(1)|int if
+          states('sensor.t_chambre_temperature')|float(0) % 1 == 0 else
+          states('sensor.t_chambre_temperature')|float(0)|round(1) }}°  
+
+          {% if states('sensor.t_chambre_humidite') not in ['', 'unknown',
+          'unavailable', none] %}
+
+          💧{{ states('sensor.t_chambre_humidite')|float(0)|round(0) }}%  
+
+          {% endif %}
+        icon: mdi:bed
+        fill_container: true
+        multiline_secondary: false
+        layout: vertical
+        tap_action:
+          action: more-info
+        hold_action:
+          action: more-info
+          entity: sensor.t_chambre_humidite
+        entity: sensor.t_chambre_temperature
+        icon_color: >-
+          {% set temp = states('sensor.t_chambre_temperature')|float %} {% if
+          temp <= 16 %}#0019FF {% elif temp <= 17 %}#2D7DD2 {% elif temp <= 18
+          %}#89CFF0 {% elif temp <= 19 %}#90EE90 {% elif temp <= 20 %}#97CC04 {%
+          elif temp <= 21 %}#4CAF50 {% elif temp <= 22 %}#FFD700 {% elif temp <=
+          23 %}#FFA500 {% elif temp <= 24 %}#F45D01 {% elif temp <= 25 %}#FF4500
+          {% elif temp <= 26 %}#FF0000 {% else %}#8B0000{% endif %}
+      - type: custom:mushroom-template-card
+        primary: Lola
+        secondary: >+
+          🌡️{{
+          states('sensor.tdeg_chambre_lola_temperature')|float(0)|round(1)|int
+          if states('sensor.tdeg_chambre_lola_temperature')|float(0) % 1 == 0
+          else states('sensor.tdeg_chambre_lola_temperature')|float(0)|round(1)
+          }}°  
+
+          {% if states('sensor.tdeg_chambre_lola_humidity') not in ['',
+          'unknown', 'unavailable', none] %}
+
+          💧{{ states('sensor.tdeg_chambre_lola_humidity')|float(0)|round(0)
+          }}%  
+
+          {% endif %}
+
+        icon: mdi:bed-single
+        fill_container: true
+        multiline_secondary: false
+        layout: vertical
+        tap_action:
+          action: more-info
+        entity: sensor.tdeg_chambre_lola_temperature
+        hold_action:
+          action: more-info
+          entity: sensor.tdeg_chambre_lola_humidity
+        icon_color: >
+          {% set temp = states('sensor.tdeg_chambre_lola_temperature') | float
+          %} {% if temp <= 16 %}
+            #0019FF
+          {% elif temp <= 17 %}
+            #2D7DD2
+          {% elif temp <= 18 %}
+            #89CFF0
+          {% elif temp <= 19 %}
+            #90EE90
+          {% elif temp <= 20 %}
+            #97CC04
+          {% elif temp <= 21 %}
+            #4CAF50
+          {% elif temp <= 22 %}
+            #FFD700
+          {% elif temp <= 23 %}
+            #FFA500
+          {% elif temp <= 24 %}
+            #F45D01
+          {% elif temp <= 25 %}
+            #FF4500
+          {% elif temp <= 26 %}
+            #FF0000
+          {% else %}
+            #8B0000
+          {% endif %}
+      - type: custom:mushroom-template-card
+        primary: Ch.Étage
+        secondary: >+
+          🌡️{{
+          states('sensor.t_chambre_etage_temperature')|float(0)|round(1)|int if
+          states('sensor.t_chambre_etage_temperature')|float(0) % 1 == 0 else
+          states('sensor.t_chambre_etage_temperature')|float(0)|round(1) }}°  
+
+          {% if states('sensor.t_chambre_etage_humidite') not in ['', 'unknown',
+          'unavailable', none] %}
+
+          💧{{ states('sensor.t_chambre_etage_humidite')|float(0)|round(1)|int
+          if states('sensor.t_chambre_etage_humidite')|float(0) % 1 == 0 else
+          states('sensor.t_chambre_etage_humidite')|float(0)|round(1) }}%  
+
+          {% endif %}
+
+        icon: mdi:bed-double
+        fill_container: true
+        multiline_secondary: false
+        layout: vertical
+        tap_action:
+          action: more-info
+        entity: sensor.t_chambre_etage_temperature
+        icon_color: >
+          {% set temp = states('sensor.t_chambre_etage_temperature') | float %}
+          {% if temp <= 16 %}
+            #0019FF
+          {% elif temp <= 17 %}
+            #2D7DD2
+          {% elif temp <= 18 %}
+            #89CFF0
+          {% elif temp <= 19 %}
+            #90EE90
+          {% elif temp <= 20 %}
+            #97CC04
+          {% elif temp <= 21 %}
+            #4CAF50
+          {% elif temp <= 22 %}
+            #FFD700
+          {% elif temp <= 23 %}
+            #FFA500
+          {% elif temp <= 24 %}
+            #F45D01
+          {% elif temp <= 25 %}
+            #FF4500
+          {% elif temp <= 26 %}
+            #FF0000
+          {% else %}
+            #8B0000
+          {% endif %}
+      - type: custom:mushroom-template-card
+        primary: Bureau
+        secondary: >
+          🌡️{{ states('sensor.t_bureau_temperature')|float(0)|round(1)|int if
+          states('sensor.t_bureau_temperature')|float(0) % 1 == 0 else
+          states('sensor.t_bureau_temperature')|float(0)|round(1) }}°  
+
+          {% if states('sensor.t_bureau_humidite') not in ['', 'unknown',
+          'unavailable', none] %}
+
+          💧{{ states('sensor.t_bureau_humidite')|float(0)|round(1)|int if
+          states('sensor.t_bureau_humidite')|float(0) % 1 == 0 else
+          states('sensor.t_bureau_humidite')|float(0)|round(1) }}%  
+
+          {% endif %}
+        icon: mdi:desk
+        fill_container: true
+        multiline_secondary: false
+        layout: vertical
+        tap_action:
+          action: more-info
+        entity: sensor.t_bureau_temperature
+        icon_color: >-
+          {% set temp = states('sensor.t_bureau_temperature') | float %} {% if
+          temp <= 16 %}
+            #0019FF
+          {% elif temp <= 17 %}
+            #2D7DD2
+          {% elif temp <= 18 %}
+            #89CFF0
+          {% elif temp <= 19 %}
+            #90EE90
+          {% elif temp <= 20 %}
+            #97CC04
+          {% elif temp <= 21 %}
+            #4CAF50
+          {% elif temp <= 22 %}
+            #FFD700
+          {% elif temp <= 23 %}
+            #FFA500
+          {% elif temp <= 24 %}
+            #F45D01
+          {% elif temp <= 25 %}
+            #FF4500
+          {% elif temp <= 26 %}
+            #FF0000
+          {% else %}
+            #8B0000
+          {% endif %}
+      - type: custom:mushroom-template-card
+        primary: Cuisine
+        secondary: >
+          🌡️{{ states('sensor.pir_cuisine_temperature') | float(0) | round(1) |
+          int if states('sensor.pir_cuisine_temperature') | float(0) % 1 == 0
+          else states('sensor.pir_cuisine_temperature') | float(0) | round(1)
+          }}°  
+
+          {% if states('sensor.pir_cuisine_humidity') not in ['', 'unknown',
+          'unavailable', none] %}
+            💧{{ states('sensor.pir_cuisine_humidity') | float(0) | round(0) }}%
+          {% endif %}
+        icon: mdi:stove
+        fill_container: true
+        multiline_secondary: false
+        layout: vertical
+        tap_action:
+          action: more-info
+        entity: sensor.pir_cuisine_temperature
+        icon_color: >-
+          {% set temp = states('sensor.pir_cuisine_temperature') | float %} {%
+          if temp <= 16 %}
+            #0019FF
+          {% elif temp <= 17 %}
+            #2D7DD2
+          {% elif temp <= 18 %}
+            #89CFF0
+          {% elif temp <= 19 %}
+            #90EE90
+          {% elif temp <= 20 %}
+            #97CC04
+          {% elif temp <= 21 %}
+            #4CAF50
+          {% elif temp <= 22 %}
+            #FFD700
+          {% elif temp <= 23 %}
+            #FFA500
+          {% elif temp <= 24 %}
+            #F45D01
+          {% elif temp <= 25 %}
+            #FF4500
+          {% elif temp <= 26 %}
+            #FF0000
+          {% else %}
+            #8B0000
+          {% endif %}
+      - type: custom:mushroom-template-card
+        primary: SdB
+        secondary: >+
+          🌡️{{ states('sensor.t_sdb_temperature') | float(0) | round(1) | int
+          if states('sensor.t_sdb_temperature') | float(0) % 1 == 0 else
+          states('sensor.t_sdb_temperature') | float(0) | round(1) }}°  
+
+          {% if states('sensor.tdeg_sdb_2_humidity') not in ['', 'unknown',
+          'unavailable', none] %}
+            💧{{ states('sensor.tdeg_sdb_2_humidity') | float(0) | round(0) }}%
+          {% endif %}
+
+        icon: mdi:shower
+        fill_container: true
+        multiline_secondary: false
+        layout: vertical
+        tap_action:
+          action: more-info
+        entity: sensor.t_sdb_temperature
+        hold_action:
+          action: more-info
+          entity: sensor.tdeg_sdb_2_humidity
+        icon_color: >-
+          {% set temp = states('sensor.t_sdb_temperature') | float %} {% if temp
+          <= 16 %}
+            #0019FF
+          {% elif temp <= 17 %}
+            #2D7DD2
+          {% elif temp <= 18 %}
+            #89CFF0
+          {% elif temp <= 19 %}
+            #90EE90
+          {% elif temp <= 20 %}
+            #97CC04
+          {% elif temp <= 21 %}
+            #4CAF50
+          {% elif temp <= 22 %}
+            #FFD700
+          {% elif temp <= 23 %}
+            #FFA500
+          {% elif temp <= 24 %}
+            #F45D01
+          {% elif temp <= 25 %}
+            #FF4500
+          {% elif temp <= 26 %}
+            #FF0000
+          {% else %}
+            #8B0000
+          {% endif %}
+      - type: custom:mushroom-template-card
+        primary: SdB Étage
+        secondary: >+
+          🌡️{{ states('sensor.pir_sdb_etage_temperature') | float(0) | round(1)
+          | int if states('sensor.pir_sdb_etage_temperature') | float(0) % 1 ==
+          0 else states('sensor.pir_sdb_etage_temperature') | float(0) |
+          round(1) }}°  
+
+          {% if states('sensor.pir_sdb_etage_humidity') not in ['', 'unknown',
+          'unavailable', none] %}
+            💧{{ states('sensor.pir_sdb_etage_humidity') | float(0) | round(0) }}%
+          {% endif %}
+
+        icon: mdi:shower
+        fill_container: true
+        multiline_secondary: false
+        layout: vertical
+        tap_action:
+          action: more-info
+        entity: sensor.pir_sdb_etage_temperature
+        icon_color: >-
+          {% set temp = states('sensor.pir_sdb_etage_temperature') | float %} {%
+          if temp <= 16 %}
+            #0019FF
+          {% elif temp <= 17 %}
+            #2D7DD2
+          {% elif temp <= 18 %}
+            #89CFF0
+          {% elif temp <= 19 %}
+            #90EE90
+          {% elif temp <= 20 %}
+            #97CC04
+          {% elif temp <= 21 %}
+            #4CAF50
+          {% elif temp <= 22 %}
+            #FFD700
+          {% elif temp <= 23 %}
+            #FFA500
+          {% elif temp <= 24 %}
+            #F45D01
+          {% elif temp <= 25 %}
+            #FF4500
+          {% elif temp <= 26 %}
+            #FF0000
+          {% else %}
+            #8B0000
+          {% endif %}
+      - type: custom:mushroom-template-card
+        primary: Couloir Etage
+        secondary: >
+          🌡️{{ states('sensor.tdeg_couloir_etage_temperature') | float(0) |
+          round(1) | int if states('sensor.tdeg_couloir_etage_temperature') |
+          float(0) % 1 == 0 else states('sensor.tdeg_couloir_etage_temperature')
+          | float(0) | round(1) }}°  
+
+          {% if states('sensor.tdeg_couloir_etage_humidity') not in ['',
+          'unknown', 'unavailable', none] %}
+            💧{{ states('sensor.tdeg_couloir_etage_humidity') | float(0) | round(0) }}%
+          {% endif %}
+        icon: mdi:desk
+        fill_container: true
+        multiline_secondary: false
+        layout: vertical
+        tap_action:
+          action: more-info
+        entity: sensor.tdeg_couloir_etage_temperature
+        icon_color: >-
+          {% set temp = states('sensor.tdeg_couloir_etage_temperature') | float
+          %} {% if temp <= 16 %}
+            #0019FF
+          {% elif temp <= 17 %}
+            #2D7DD2
+          {% elif temp <= 18 %}
+            #89CFF0
+          {% elif temp <= 19 %}
+            #90EE90
+          {% elif temp <= 20 %}
+            #97CC04
+          {% elif temp <= 21 %}
+            #4CAF50
+          {% elif temp <= 22 %}
+            #FFD700
+          {% elif temp <= 23 %}
+            #FFA500
+          {% elif temp <= 24 %}
+            #F45D01
+          {% elif temp <= 25 %}
+            #FF4500
+          {% elif temp <= 26 %}
+            #FF0000
+          {% else %}
+            #8B0000
+          {% endif %}
+      - type: custom:mushroom-template-card
+        primary: Ch. T2
+        secondary: >+
+          🌡️{{ states('sensor.t_chambre_t2_temperature') | float(0) | round(1)
+          | int if states('sensor.t_chambre_t2_temperature') | float(0) % 1 == 0
+          else states('sensor.t_chambre_t2_temperature') | float(0) | round(1)
+          }}°  
+
+          {% if states('sensor.tdeg_chambre_t2_humidity') not in ['', 'unknown',
+          'unavailable', none] %}
+            💧{{ states('sensor.tdeg_chambre_t2_humidity') | float(0) | round(0) }}%
+          {% endif %}
+
+        icon: mdi:bed
+        fill_container: true
+        multiline_secondary: false
+        layout: vertical
+        tap_action:
+          action: more-info
+        entity: sensor.t_chambre_t2_temperature
+        icon_color: >-
+          {% set temp = states('sensor.t_chambre_t2_temperature') | float %} {%
+          if temp <= 16 %}
+            #0019FF
+          {% elif temp <= 17 %}
+            #2D7DD2
+          {% elif temp <= 18 %}
+            #89CFF0
+          {% elif temp <= 19 %}
+            #90EE90
+          {% elif temp <= 20 %}
+            #97CC04
+          {% elif temp <= 21 %}
+            #4CAF50
+          {% elif temp <= 22 %}
+            #FFD700
+          {% elif temp <= 23 %}
+            #FFA500
+          {% elif temp <= 24 %}
+            #F45D01
+          {% elif temp <= 25 %}
+            #FF4500
+          {% elif temp <= 26 %}
+            #FF0000
+          {% else %}
+            #8B0000
+          {% endif %}
+      - type: custom:mushroom-template-card
+        primary: SdB T2
+        secondary: >
+          🌡️{{ states('sensor.tdeg_sdb_t2_temperature') | float(0) | round(1) |
+          int if states('sensor.tdeg_sdb_t2_temperature') | float(0) % 1 == 0
+          else states('sensor.tdeg_sdb_t2_temperature') | float(0) | round(1)
+          }}°  
+
+          {% if states('sensor.tdeg_sdb_t2_humidity') not in ['', 'unknown',
+          'unavailable', none] %}
+            💧{{ states('sensor.tdeg_sdb_t2_humidity') | float(0) | round(0) }}%
+          {% endif %}
+        icon: mdi:shower
+        fill_container: true
+        multiline_secondary: false
+        layout: vertical
+        tap_action:
+          action: more-info
+        entity: sensor.tdeg_sdb_t2_temperature
+        icon_color: >-
+          {% set temp = states('sensor.tdeg_sdb_t2_temperature') | float %} {%
+          if temp <= 16 %}
+            #0019FF
+          {% elif temp <= 17 %}
+            #2D7DD2
+          {% elif temp <= 18 %}
+            #89CFF0
+          {% elif temp <= 19 %}
+            #90EE90
+          {% elif temp <= 20 %}
+            #97CC04
+          {% elif temp <= 21 %}
+            #4CAF50
+          {% elif temp <= 22 %}
+            #FFD700
+          {% elif temp <= 23 %}
+            #FFA500
+          {% elif temp <= 24 %}
+            #F45D01
+          {% elif temp <= 25 %}
+            #FF4500
+          {% elif temp <= 26 %}
+            #FF0000
+          {% else %}
+            #8B0000
+          {% endif %}
+      - type: custom:mushroom-template-card
+        primary: Buanderie
+        secondary: >+
+          🌡️{{ states('sensor.tdeg_buanderie_temperature') | float(0) |
+          round(1) | int if states('sensor.tdeg_buanderie_temperature') |
+          float(0) % 1 == 0 else states('sensor.tdeg_buanderie_temperature') |
+          float(0) | round(1) }}°  
+
+          {% if states('sensor.tdeg_buanderie_humidity') not in ['', 'unknown',
+          'unavailable', none] %}
+            💧{{ states('sensor.tdeg_buanderie_humidity') | float(0) | round(0) }}%
+          {% endif %}
+
+        icon: mdi:washing-machine
+        fill_container: true
+        multiline_secondary: false
+        layout: vertical
+        tap_action:
+          action: more-info
+        entity: sensor.tdeg_buanderie_temperature
+        icon_color: >-
+          {% set temp = states('sensor.tdeg_buanderie_temperature') | float %}
+          {% if temp <= 16 %}
+            #0019FF
+          {% elif temp <= 17 %}
+            #2D7DD2
+          {% elif temp <= 18 %}
+            #89CFF0
+          {% elif temp <= 19 %}
+            #90EE90
+          {% elif temp <= 20 %}
+            #97CC04
+          {% elif temp <= 21 %}
+            #4CAF50
+          {% elif temp <= 22 %}
+            #FFD700
+          {% elif temp <= 23 %}
+            #FFA500
+          {% elif temp <= 24 %}
+            #F45D01
+          {% elif temp <= 25 %}
+            #FF4500
+          {% elif temp <= 26 %}
+            #FF0000
+          {% else %}
+            #8B0000
+          {% endif %}
+      - type: custom:mushroom-template-card
+        primary: Frigo
+        secondary: >
+          🌡️{{ states('sensor.frigo_temperature_adjusted') | float(0) |
+          round(1) | int if states('sensor.frigo_temperature_adjusted') |
+          float(0) % 1 == 0 else states('sensor.frigo_temperature_adjusted') |
+          float(0) | round(1) }}°  
+
+          {% if states('sensor.t_frigo_humidite') not in ['', 'unknown',
+          'unavailable', none] %}
+            💧{{ states('sensor.t_frigo_humidite') | float(0) | round(0) }}%
+          {% endif %}
+        icon: mdi:fridge
+        fill_container: true
+        multiline_secondary: false
+        layout: vertical
+        tap_action:
+          action: more-info
+        entity: sensor.frigo_temperature_adjusted
+        icon_color: >-
+          {% set temp = states('sensor.frigo_temperature_adjusted') | float %}
+          {% if temp <= 0 %}
+            #0019FF
+          {% elif temp <= 2 %}
+            #2D7DD2
+          {% elif temp <= 3 %}
+            #89CFF0
+          {% elif temp <= 4 %}
+            #FFD700
+          {% elif temp <= 5 %}
+            #97CC04
+          {% elif temp <= 6 %}
+            #4CAF50
+          {% elif temp <= 7 %}
+            #FFD700
+          {% elif temp <= 8 %}
+            #FFA500
+          {% elif temp <= 9 %}
+            #FF4500
+          {% else %}
+            #FF0000
+          {% endif %}
+      - type: custom:mushroom-template-card
+        primary: Congélateur
+        secondary: >
+          🌡️{{ states('sensor.t_congelateur_temperature') | float(0) | round(1)
+          | int if states('sensor.t_congelateur_temperature') | float(0) % 1 ==
+          0 else states('sensor.t_congelateur_temperature') | float(0) |
+          round(1) }}°  
+
+          {% if states('sensor.t_congelateur_humidite') not in ['', 'unknown',
+          'unavailable', none] %}
+            💧{{ states('sensor.t_congelateur_humidite') | float(0) | round(0) }}%
+          {% endif %}
+        icon: mdi:snowflake-thermometer
+        fill_container: true
+        multiline_secondary: false
+        layout: vertical
+        tap_action:
+          action: more-info
+        entity: sensor.t_congelateur_temperature
+        icon_color: >-
+          {% set temp = states('sensor.t_congelateur_temperature') | float %} {%
+          if temp > 0 %}
+            #8B0000
+          {% elif temp > -5 %}
+            #FF0000
+          {% elif temp > -10 %}
+            #FF4500
+          {% elif temp > -15 %}
+            #FFA500
+          {% elif temp > -18 %}
+            #FFD700
+          {% elif temp > -22 %}
+            #4CAF50
+          {% elif temp > -25 %}
+            #1E90FF
+          {% elif temp > -30 %}
+            #0000CD
+          {% else %}
+            #0019FF
+          {% endif %}
+      - type: custom:mushroom-template-card
+        primary: Local technique
+        secondary: >
+          🌡️{{ states('sensor.tdeg_local_technique_temperature') | float(0) |
+          round(1) | int if states('sensor.tdeg_local_technique_temperature') |
+          float(0) % 1 == 0 else
+          states('sensor.tdeg_local_technique_temperature') | float(0) |
+          round(1) }}°  
+
+          {% if states('sensor.tdeg_local_technique_humidity') not in ['',
+          'unknown', 'unavailable', none] %}
+            💧{{ states('sensor.tdeg_local_technique_humidity') | float(0) | round(0) }}%
+          {% endif %}
+        icon: mdi:tools
+        fill_container: true
+        multiline_secondary: false
+        layout: vertical
+        tap_action:
+          action: more-info
+        entity: sensor.tdeg_local_technique_temperature
+        icon_color: >-
+          {% set temp = states('sensor.tdeg_local_technique_temperature') |
+          float %} {% if temp <= 15 %}
+            #0019FF
+          {% elif temp <= 18 %}
+            #2D7DD2
+          {% elif temp <= 20 %}
+            #4CAF50
+          {% elif temp <= 22 %}
+            #97CC04
+          {% elif temp <= 24 %}
+            #FFD700
+          {% elif temp <= 26 %}
+            #FFA500
+          {% elif temp <= 28 %}
+            #FF4500
+          {% elif temp <= 30 %}
+            #FF0000
+          {% else %}
+            #8B0000
+          {% endif %}
